@@ -22,7 +22,7 @@ To add the repository by hand, use the address `https://jpsutton.github.io/tilef
 fingerprint is:
 
 ```
-FINGERPRINT_PLACEHOLDER
+FEAAF9F0566D396B06FD05519D704D3FDA9FF9CF5E74370898BBC1D6A1D7D538
 ```
 
 You can also download `tilefit-<version>.apk` from the
