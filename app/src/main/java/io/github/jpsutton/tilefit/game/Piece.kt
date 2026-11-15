@@ -3,13 +3,13 @@ package io.github.jpsutton.tilefit.game
 import kotlin.random.Random
 
 /** One block of a [Piece], relative to the piece's top-left corner. */
-data class Offset(val row: Int, val col: Int)
+data class Cell(val row: Int, val col: Int)
 
 /**
  * A piece in one fixed orientation (pieces are not rotated while playing). [id] is stable
  * across versions as long as the [Pieces] catalog keeps its order; it is what a saved game stores.
  */
-class Piece(val id: String, val cells: List<Offset>) {
+class Piece(val id: String, val cells: List<Cell>) {
     val height: Int = cells.maxOf { it.row } + 1
     val width: Int = cells.maxOf { it.col } + 1
     val size: Int get() = cells.size
@@ -41,19 +41,19 @@ object Pieces {
 
     private fun orientations(family: Family): List<Piece> {
         val base = buildList {
-            family.rows.forEachIndexed { r, row -> row.forEachIndexed { c, ch -> if (ch == '#') add(Offset(r, c)) } }
+            family.rows.forEachIndexed { r, row -> row.forEachIndexed { c, ch -> if (ch == '#') add(Cell(r, c)) } }
         }
-        val seen = LinkedHashMap<List<Offset>, Unit>()
+        val seen = LinkedHashMap<List<Cell>, Unit>()
         var shape = base
         repeat(4) {
-            for (flipped in listOf(shape, shape.map { Offset(it.row, -it.col) })) {
+            for (flipped in listOf(shape, shape.map { Cell(it.row, -it.col) })) {
                 val minR = flipped.minOf { it.row }
                 val minC = flipped.minOf { it.col }
-                val normal = flipped.map { Offset(it.row - minR, it.col - minC) }
+                val normal = flipped.map { Cell(it.row - minR, it.col - minC) }
                     .sortedWith(compareBy({ it.row }, { it.col }))
                 seen[normal] = Unit
             }
-            shape = shape.map { Offset(it.col, -it.row) } // quarter turn
+            shape = shape.map { Cell(it.col, -it.row) } // quarter turn
         }
         return seen.keys.mapIndexed { i, cells -> Piece("${family.name}-$i", cells) }
     }
