@@ -20,7 +20,7 @@ class PiecesTest {
         assertEquals(2, count("duo"))
         assertEquals(2, count("bar5"))
         assertEquals(4, count("corner3"))
-        assertEquals(1, count("square3"))
+        assertEquals(1, count("square2"))
         assertEquals(8, count("el4"))   // chiral: rotations and mirror images
         assertEquals(4, count("tee4"))
         assertEquals(4, count("skew4")) // S and Z, two orientations each
@@ -35,6 +35,17 @@ class PiecesTest {
             assertTrue(p.width <= SIZE && p.height <= SIZE)
             assertEquals(p.cells.size, p.cells.toSet().size)
         }
+    }
+
+    @Test
+    fun neverDealsA3x3Square() {
+        assertTrue(Pieces.all.none { it.size == 9 })
+        assertNull(Pieces.all.firstOrNull { it.id.startsWith("square3") })
+    }
+
+    @Test
+    fun aRetiredSquareStillLoadsFromASave() {
+        assertEquals(9, Pieces.byId("square3-0")!!.size)
     }
 
     @Test

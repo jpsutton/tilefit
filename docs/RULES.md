@@ -31,5 +31,5 @@ So a piece of 4 squares that clears two groups as the third clearing piece in a 
 
 Blockdoku-style games differ on the exact point values. These are Tilefit's own: the board, the clearing of rows,
 columns and boxes, the three-piece hand and the end condition are the standard rules; the numbers above are not
-taken from any particular game. The piece set is original: 17 shapes of 1 to 6 squares, in every orientation they
+taken from any particular game. The piece set is original: 16 shapes of 1 to 5 squares, in every orientation they
 can take, with smaller shapes dealt somewhat more often.

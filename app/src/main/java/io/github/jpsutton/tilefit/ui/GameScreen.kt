@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -93,9 +94,11 @@ fun GameScreen(vm: GameViewModel, onMenu: () -> Unit) {
     }
 
     val primary = MaterialTheme.colorScheme.primary
+    // Neighbouring 3x3 boxes alternate between these two shades; they must be easy to tell apart.
+    val dark = isSystemInDarkTheme()
     val colors = BoardColors(
-        empty = MaterialTheme.colorScheme.surfaceVariant,
-        emptyAlt = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        empty = if (dark) Color(0xFF1B2040) else Color(0xFFDDE2F3),
+        emptyAlt = if (dark) Color(0xFF3A4478) else Color(0xFFA9B5DE),
         block = primary,
         clear = MaterialTheme.colorScheme.secondary,
         flash = MaterialTheme.colorScheme.tertiary,
