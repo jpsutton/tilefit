@@ -11,7 +11,7 @@ import org.junit.Test
 class GameTest {
     private val dot = Pieces.byId("dot-0")!!
     private val bar3h = Pieces.all.first { it.id.startsWith("bar3") && it.width == 3 }
-    private val square3 = Pieces.byId("square3-0")!!
+    private val square2 = Pieces.byId("square2-0")!!
 
     private fun board(vararg rows: String): Board {
         require(rows.size == SIZE)
@@ -182,14 +182,14 @@ class GameTest {
         // Checkerboard: no cell has an empty neighbour, so only the dot would fit... and it is not in hand.
         val rows = Array(SIZE) { r -> String(CharArray(SIZE) { c -> if ((r + c) % 2 == 0) '#' else '.' }) }
         val cb = board(*rows)
-        assertTrue(state(cb, listOf(bar3h, null, square3)).isOver)
+        assertTrue(state(cb, listOf(bar3h, null, square2)).isOver)
         assertFalse(state(cb, listOf(bar3h, null, dot)).isOver)
     }
 
     @Test
     fun gameEndsAfterTheLastFittingPieceIsPlaced() {
         val rows = Array(SIZE) { r -> String(CharArray(SIZE) { c -> if ((r + c) % 2 == 0) '#' else '.' }) }
-        val s = state(board(*rows), listOf(dot, square3, null))
+        val s = state(board(*rows), listOf(dot, square2, null))
         val r = Game.place(s, 0, 0, 1, Random(1))!!
         assertTrue(r.state.isOver)
     }

@@ -27,7 +27,6 @@ object Pieces {
         Family("bar5", 1, listOf("#####")),
         Family("corner3", 2, listOf("##", "#.")),
         Family("square2", 2, listOf("##", "##")),
-        Family("square3", 1, listOf("###", "###", "###")),
         Family("el4", 2, listOf("#.", "#.", "##")),
         Family("tee4", 2, listOf("###", ".#.")),
         Family("skew4", 2, listOf(".##", "##.")),
@@ -63,7 +62,10 @@ object Pieces {
     /** Every piece in every orientation. */
     val all: List<Piece> = byFamily.flatMap { it.second }
 
-    private val index: Map<String, Piece> = all.associateBy { it.id }
+    // The 3x3 square was dealt in 0.1.0 and no longer is; a game saved with one still loads.
+    private val retired = listOf(Piece("square3-0", List(9) { Cell(it / 3, it % 3) }))
+
+    private val index: Map<String, Piece> = (all + retired).associateBy { it.id }
 
     fun byId(id: String): Piece? = index[id]
 
