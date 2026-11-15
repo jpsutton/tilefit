@@ -6,8 +6,8 @@ import kotlin.random.Random
 data class Cell(val row: Int, val col: Int)
 
 /**
- * A piece in one fixed orientation (pieces are not rotated while playing). [id] is stable
- * across versions as long as the [Pieces] catalog keeps its order; it is what a saved game stores.
+ * A piece in one fixed orientation (pieces are not rotated while playing). Each orientation is its own
+ * piece. [id] is stable and is what a saved game stores. Cells need not touch each other.
  */
 class Piece(val id: String, val cells: List<Cell>) {
     val height: Int = cells.maxOf { it.row } + 1
@@ -16,65 +16,67 @@ class Piece(val id: String, val cells: List<Cell>) {
 }
 
 object Pieces {
-    private class Family(val name: String, val weight: Int, val rows: List<String>)
+    /** Score at which dealing moves up a difficulty step: below 180 is easy, from 600 it is hardest. */
+    private val THRESHOLDS = intArrayOf(180, 600)
 
-    // Small pieces are weighted up so a hand is rarely all large pieces.
-    private val families = listOf(
-        Family("dot", 1, listOf("#")),
-        Family("duo", 2, listOf("##")),
-        Family("bar3", 2, listOf("###")),
-        Family("bar4", 2, listOf("####")),
-        Family("bar5", 1, listOf("#####")),
-        Family("corner3", 2, listOf("##", "#.")),
-        Family("square2", 2, listOf("##", "##")),
-        Family("el4", 2, listOf("#.", "#.", "##")),
-        Family("tee4", 2, listOf("###", ".#.")),
-        Family("skew4", 2, listOf(".##", "##.")),
-        Family("corner5", 1, listOf("#..", "#..", "###")),
-        Family("el5", 1, listOf("#.", "#.", "#.", "##")),
-        Family("tee5", 1, listOf("###", ".#.", ".#.")),
-        Family("plus", 1, listOf(".#.", "###", ".#.")),
-        Family("pee", 1, listOf("##", "##", "#.")),
-        Family("cup", 1, listOf("#.#", "###")),
+    /** The difficulty step (0, 1 or 2) for a game score: how many thresholds it has reached. */
+    fun difficultyFor(score: Int): Int = THRESHOLDS.count { score >= it }
+
+    private class Entry(val id: Int, val rows: String, val weights: IntArray)
+
+    private fun e(id: Int, rows: String, easy: Int, medium: Int, hard: Int) =
+        Entry(id, rows, intArrayOf(easy, medium, hard))
+
+    // Every piece in the game, one entry per orientation, with its weight at each difficulty step. Weight 0
+    // means it is not dealt at that step; a bigger weight is dealt more often. Rows are separated by '/'.
+    // The ids are only labels and keep the numbers of the design notes; unused numbers are shapes never dealt.
+    private val table = listOf(
+        e(1, ".#/##", 102, 93, 85), e(2, "#./##", 102, 93, 85), e(3, "##/#.", 102, 93, 85), e(4, "##/.#", 102, 93, 85),
+        e(5, "##/##", 128, 117, 105),
+        e(6, "#####", 75, 90, 100), e(7, "####", 98, 105, 116), e(8, "###", 128, 117, 105),
+        e(9, "##", 128, 117, 105),
+        e(11, "#/#/#/#/#", 75, 90, 100), e(12, "#/#/#/#", 98, 105, 116), e(13, "#/#/#", 128, 117, 105),
+        e(14, "#/#", 128, 117, 105), e(15, "#", 128, 117, 105),
+        e(16, "##/#./#.", 102, 93, 85), e(17, "###/..#", 102, 93, 85), e(18, ".#/.#/##", 102, 93, 85),
+        e(19, "#../###", 102, 93, 85), e(20, ".#./###", 102, 93, 85),
+        e(21, "###/#../#..", 98, 105, 116), e(22, "..#/..#/###", 98, 105, 116),
+        e(23, "###/..#/..#", 98, 105, 116), e(24, "#../#../###", 98, 105, 116),
+        e(25, ".#/##/.#", 102, 93, 85), e(26, ".#/##/#.", 98, 105, 116), e(27, "##./.##", 98, 105, 116),
+        e(28, "#./##/.#", 98, 105, 116), e(29, ".##/##.", 98, 105, 116), e(30, "#./##/#.", 102, 93, 85),
+        e(35, "###/.#.", 102, 93, 85),
+        e(36, "..#/.#./#..", 0, 105, 116), e(37, "#../.#./..#", 0, 105, 116),
+        e(40, ".#./###/.#.", 75, 90, 100),
+        e(41, "###/#.#", 0, 105, 116), e(42, "##/.#/##", 0, 105, 116),
+        e(43, "#.#/###", 0, 105, 116), e(44, "##/#./##", 0, 105, 116),
+        e(51, ".#/#.", 0, 93, 85), e(52, "#./.#", 0, 93, 85),
+        e(59, "###/.#./.#.", 75, 90, 100), e(60, "..#/###/..#", 75, 90, 100),
+        e(61, ".#./.#./###", 75, 90, 100), e(62, "#../###/#..", 75, 90, 100),
+        e(67, "##/.#/.#", 102, 93, 85), e(68, "#./#./##", 102, 93, 85),
     )
 
-    private fun orientations(family: Family): List<Piece> {
-        val base = buildList {
-            family.rows.forEachIndexed { r, row -> row.forEachIndexed { c, ch -> if (ch == '#') add(Cell(r, c)) } }
+    private fun pieceOf(entry: Entry): Piece {
+        val cells = buildList {
+            entry.rows.split('/').forEachIndexed { r, row -> row.forEachIndexed { c, ch -> if (ch == '#') add(Cell(r, c)) } }
         }
-        val seen = LinkedHashMap<List<Cell>, Unit>()
-        var shape = base
-        repeat(4) {
-            for (flipped in listOf(shape, shape.map { Cell(it.row, -it.col) })) {
-                val minR = flipped.minOf { it.row }
-                val minC = flipped.minOf { it.col }
-                val normal = flipped.map { Cell(it.row - minR, it.col - minC) }
-                    .sortedWith(compareBy({ it.row }, { it.col }))
-                seen[normal] = Unit
-            }
-            shape = shape.map { Cell(it.col, -it.row) } // quarter turn
-        }
-        return seen.keys.mapIndexed { i, cells -> Piece("${family.name}-$i", cells) }
+        return Piece("f${entry.id}", cells)
     }
 
-    private val byFamily: List<Pair<Family, List<Piece>>> = families.map { it to orientations(it) }
+    private val pieces: List<Pair<Piece, IntArray>> = table.map { pieceOf(it) to it.weights }
 
-    /** Every piece in every orientation. */
-    val all: List<Piece> = byFamily.flatMap { it.second }
+    /** Every piece that can be dealt. */
+    val all: List<Piece> = pieces.map { it.first }
 
-    // The 3x3 square was dealt in 0.1.0 and no longer is; a game saved with one still loads.
-    private val retired = listOf(Piece("square3-0", List(9) { Cell(it / 3, it % 3) }))
-
-    private val index: Map<String, Piece> = (all + retired).associateBy { it.id }
+    private val index: Map<String, Piece> = all.associateBy { it.id }
 
     fun byId(id: String): Piece? = index[id]
 
-    /** A random piece: a shape weighted by its family, then one of its orientations. */
-    fun random(random: Random): Piece {
-        var pick = random.nextInt(byFamily.sumOf { it.first.weight })
-        for ((family, pieces) in byFamily) {
-            pick -= family.weight
-            if (pick < 0) return pieces[random.nextInt(pieces.size)]
+    /** A random piece for the difficulty step [difficulty] (see [difficultyFor]), weighted. */
+    fun random(random: Random, difficulty: Int = 0): Piece {
+        val d = difficulty.coerceIn(0, THRESHOLDS.size)
+        var pick = random.nextInt(pieces.sumOf { it.second[d] })
+        for ((piece, weights) in pieces) {
+            pick -= weights[d]
+            if (pick < 0) return piece
         }
         error("unreachable")
     }
