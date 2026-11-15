@@ -8,23 +8,25 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PiecesTest {
+    private fun dealt(difficulty: Int, draws: Int = 30_000): Set<String> {
+        val random = Random(1)
+        return HashSet<String>().also { seen -> repeat(draws) { seen += Pieces.random(random, difficulty).id } }
+    }
+
     @Test
     fun idsAreUnique() {
         assertEquals(Pieces.all.size, Pieces.all.map { it.id }.toSet().size)
     }
 
     @Test
-    fun orientationCountsPerShape() {
-        fun count(name: String) = Pieces.all.count { it.id.substringBeforeLast("-") == name }
-        assertEquals(1, count("dot"))
-        assertEquals(2, count("duo"))
-        assertEquals(2, count("bar5"))
-        assertEquals(4, count("corner3"))
-        assertEquals(1, count("square2"))
-        assertEquals(8, count("el4"))   // chiral: rotations and mirror images
-        assertEquals(4, count("tee4"))
-        assertEquals(4, count("skew4")) // S and Z, two orientations each
-        assertEquals(1, count("plus"))
+    fun hasTheFullPieceSet() {
+        assertEquals(45, Pieces.all.size)
+    }
+
+    @Test
+    fun noPieceIsA3x3Square() {
+        assertTrue(Pieces.all.none { it.size == 9 })
+        assertTrue(Pieces.all.none { it.width == 3 && it.height == 3 && it.size > 6 })
     }
 
     @Test
@@ -34,37 +36,50 @@ class PiecesTest {
             assertEquals(0, p.cells.minOf { it.col })
             assertTrue(p.width <= SIZE && p.height <= SIZE)
             assertEquals(p.cells.size, p.cells.toSet().size)
+            assertTrue(p.size in 1..5)
         }
     }
 
     @Test
-    fun neverDealsA3x3Square() {
-        assertTrue(Pieces.all.none { it.size == 9 })
-        assertNull(Pieces.all.firstOrNull { it.id.startsWith("square3") })
-    }
-
-    @Test
-    fun aRetiredSquareStillLoadsFromASave() {
-        assertEquals(9, Pieces.byId("square3-0")!!.size)
+    fun noTwoIdsAreTheSameShape() {
+        assertEquals(Pieces.all.size, Pieces.all.map { it.cells.toSet() }.toSet().size)
     }
 
     @Test
     fun lookupById() {
         for (p in Pieces.all) assertEquals(p, Pieces.byId(p.id))
         assertNull(Pieces.byId("nope"))
+        assertNull(Pieces.byId("f10")) // the 3x3 square is not in the set
+        assertEquals(1, Pieces.byId("f15")!!.size)
     }
 
     @Test
-    fun randomReachesEveryPiece() {
-        val random = Random(1)
-        val seen = HashSet<String>()
-        repeat(20_000) { seen += Pieces.random(random).id }
-        assertEquals(Pieces.all.map { it.id }.toSet(), seen)
+    fun difficultyStepsFollowTheScore() {
+        assertEquals(0, Pieces.difficultyFor(0))
+        assertEquals(0, Pieces.difficultyFor(179))
+        assertEquals(1, Pieces.difficultyFor(180))
+        assertEquals(1, Pieces.difficultyFor(599))
+        assertEquals(2, Pieces.difficultyFor(600))
+        assertEquals(2, Pieces.difficultyFor(1_000_000))
     }
 
     @Test
-    fun dotIsASingleCell() {
-        assertNotNull(Pieces.byId("dot-0"))
-        assertEquals(1, Pieces.byId("dot-0")!!.size)
+    fun theEasiestStepSkipsTheScatteredAndCupShapes() {
+        val easy = dealt(0)
+        for (id in listOf("f36", "f37", "f41", "f42", "f43", "f44", "f51", "f52")) assertTrue(id, id !in easy)
+        assertEquals(37, easy.size)
+    }
+
+    @Test
+    fun laterStepsDealEveryPiece() {
+        val all = Pieces.all.map { it.id }.toSet()
+        assertEquals(all, dealt(1))
+        assertEquals(all, dealt(2))
+    }
+
+    @Test
+    fun anOutOfRangeDifficultyIsClamped() {
+        assertNotNull(Pieces.random(Random(2), -3))
+        assertNotNull(Pieces.random(Random(2), 99))
     }
 }
