@@ -33,9 +33,9 @@ class GameCodecTest {
         assertNull(GameCodec.decode(""))
         assertNull(GameCodec.decode("hello"))
         assertNull(GameCodec.decode(good.replaceFirst("|0|", "|x|")))
-        assertNull(GameCodec.decode(good.substringBeforeLast("|") + "|dot-0,dot-0"))
+        assertNull(GameCodec.decode(good.substringBeforeLast("|") + "|f15,f15"))
         assertNull(GameCodec.decode(good.substringBeforeLast("|") + "|-,-,-"))
-        assertNull(GameCodec.decode(good.substringBeforeLast("|") + "|dot-0,dot-0,bogus"))
+        assertNull(GameCodec.decode(good.substringBeforeLast("|") + "|f15,f15,bogus"))
         assertNull(GameCodec.decode("1" + good.drop(1).replaceFirst("0", "2")))
     }
 }

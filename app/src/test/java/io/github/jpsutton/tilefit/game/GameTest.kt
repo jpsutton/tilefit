@@ -9,9 +9,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameTest {
-    private val dot = Pieces.byId("dot-0")!!
-    private val bar3h = Pieces.all.first { it.id.startsWith("bar3") && it.width == 3 }
-    private val square2 = Pieces.byId("square2-0")!!
+    private val dot = Pieces.byId("f15")!!
+    private val bar3h = Pieces.byId("f8")!!
+    private val square2 = Pieces.byId("f5")!!
 
     private fun board(vararg rows: String): Board {
         require(rows.size == SIZE)
@@ -72,8 +72,8 @@ class GameTest {
         val r = Game.place(state(b, listOf(bar3h, dot, dot)), 0, 0, 6)!!
         assertEquals(1, r.groups)
         assertEquals(9, r.cleared.size)
-        // 3 cells + 10 for one group at streak 1
-        assertEquals(13, r.points)
+        // the piece's 3 cells are all cleared, so only the 18 for one group counts
+        assertEquals(18, r.points)
         assertEquals(1, r.state.streak)
         // the row is gone; nothing else was on the board
         assertEquals(0, r.state.board.count)
@@ -81,7 +81,7 @@ class GameTest {
 
     @Test
     fun completingAColumnClearsIt() {
-        val bar3v = Pieces.all.first { it.id.startsWith("bar3") && it.height == 3 }
+        val bar3v = Pieces.byId("f13")!!
         val rows = Array(SIZE) { r -> if (r < 6) "........#" else "........." }
         val r = Game.place(state(board(*rows), listOf(bar3v, dot, dot)), 0, 6, 8)!!
         assertEquals(1, r.groups)
@@ -109,7 +109,8 @@ class GameTest {
         val r = Game.place(state(b, listOf(bar3h, dot, dot)), 0, 0, 0)!!
         assertEquals(2, r.groups)
         assertEquals(15, r.cleared.size) // 9 + 9 - 3 shared
-        assertEquals(3 + Game.clearPoints(2), r.points)
+        assertEquals(Game.clearPoints(2), r.points)
+        assertEquals(36, r.points)
         // the lone block outside both groups survives
         assertEquals(1, r.state.board.count)
         assertTrue(r.state.board[8, 8])
@@ -128,23 +129,54 @@ class GameTest {
     @Test
     fun clearPointsGrowWithGroups() {
         assertEquals(0, Game.clearPoints(0))
-        assertEquals(10, Game.clearPoints(1))
-        assertEquals(30, Game.clearPoints(2))
-        assertEquals(60, Game.clearPoints(3))
-        assertEquals(100, Game.clearPoints(4))
+        assertEquals(18, Game.clearPoints(1))
+        assertEquals(36, Game.clearPoints(2))
+        assertEquals(108, Game.clearPoints(3))
+        assertEquals(144, Game.clearPoints(4))
+        assertEquals(270, Game.clearPoints(5))
+        assertEquals(324, Game.clearPoints(6))
+        assertEquals(504, Game.clearPoints(7))
     }
 
     @Test
-    fun streakMultipliesAndResets() {
+    fun streakAddsAFlatBonusFromTheSecondClearingPiece() {
         val b = board(
             "########.", ".........", ".........", ".........", ".........", ".........", ".........", ".........", ".........",
         )
+        val first = Game.place(state(b, listOf(dot, dot, dot), streak = 0), 0, 0, 8)!!
+        assertEquals(1, first.state.streak)
+        assertEquals(18, first.points) // no bonus yet
+        val second = Game.place(state(b, listOf(dot, dot, dot), streak = 1), 0, 0, 8)!!
+        assertEquals(18 + 9, second.points)
         val clearing = Game.place(state(b, listOf(dot, dot, dot), streak = 2), 0, 0, 8)!!
         assertEquals(3, clearing.state.streak)
-        assertEquals(1 + 10 * 3, clearing.points)
+        assertEquals(18 + 9, clearing.points) // flat, does not grow with the streak
         val plain = Game.place(state(empty, listOf(dot, dot, dot), streak = 4), 0, 0, 0)!!
         assertEquals(0, plain.state.streak)
         assertEquals(1, plain.points)
+    }
+
+    @Test
+    fun onlyClearedSquaresOfThePieceLoseTheirPoint() {
+        // A vertical bar of 3 completes row 0 with only its top cell; the other 2 survive and score 1 each.
+        val bar3v = Pieces.byId("f13")!!
+        val rows = Array(SIZE) { r -> if (r == 0) "########." else "........." }
+        val r = Game.place(state(board(*rows), listOf(bar3v, dot, dot)), 0, 0, 8)!!
+        assertEquals(1, r.groups)
+        assertEquals(2 + 18, r.points)
+        assertEquals(2, r.state.board.count)
+    }
+
+    @Test
+    fun theNewHandIsDealtForTheScoreAfterThePlacement() {
+        // At 179 the dot takes the score to 180, the first medium step: its hand can hold the scattered pieces
+        // that easy hands never do. Over many seeds some hand must contain one.
+        val scattered = setOf("f36", "f37", "f41", "f42", "f43", "f44", "f51", "f52")
+        val hands = (0 until 200).map { Game.place(state(empty, listOf(null, null, dot), score = 179), 2, 0, 0, Random(it))!! }
+        assertTrue(hands.all { it.state.score == 180 })
+        assertTrue(hands.any { r -> r.state.hand.any { it!!.id in scattered } })
+        val easy = (0 until 200).map { Game.place(state(empty, listOf(null, null, dot), score = 100), 2, 0, 0, Random(it))!! }
+        assertTrue(easy.none { r -> r.state.hand.any { it!!.id in scattered } })
     }
 
     @Test
