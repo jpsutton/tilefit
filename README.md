@@ -7,7 +7,9 @@ piece in your hand fits.
 The rules and scoring are in [docs/RULES.md](docs/RULES.md). Tilefit is an independent game, not affiliated with or
 endorsed by any publisher.
 
-An unfinished game is saved and can be resumed; the best score is kept. No ads, accounts or network access.
+An unfinished game is saved and can be resumed; the best score, longest streak and games played are kept. Three
+themes: Night Shift (dark, the default), Tile & Grout (light) and Mosaic (light, every piece shape keeps its own
+color on the board), or match the system's dark setting. No ads, accounts or network access.
 
 ## Install
 
@@ -42,7 +44,11 @@ scripts/docker-gradle.sh test lint assembleRelease   # same, in a container; no 
 
 - `app/src/main/java/io/github/jpsutton/tilefit/game/`: the rules, with no Android dependencies (`Board`, `Piece`,
   `Game`, `GameState`, `GameCodec`). JVM unit tests are in `app/src/test`.
-- `.../ui/`: Jetpack Compose screens and the `GameViewModel`; `.../data/Store.kt`: saved game and best score.
+- `.../ui/`: Jetpack Compose screens and the `GameViewModel`. `Theme.kt` holds the three themes; every screen
+  draws from the current `TilefitStyle`, so the themes share one layout. `.../data/Store.kt`: saved game, records
+  and the chosen theme.
+- `app/src/main/res/font/`: static Latin subsets of four SIL Open Font License fonts, made by
+  `tools/fonts/make_fonts.py`; their licenses ship in `app/src/main/assets/licenses/`.
 - `packaging/fdroid/`: F-Droid metadata and icon. `scripts/ci/`: release scripts.
 
 ## Branches and releases

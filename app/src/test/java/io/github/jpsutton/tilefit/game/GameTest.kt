@@ -244,4 +244,44 @@ class GameTest {
         }
         assertTrue(s.isOver)
     }
+
+    @Test
+    fun placedBlocksKeepThePieceTone() {
+        val r = Game.place(state(empty, listOf(square2, dot, dot)), 0, 0, 0)!!
+        assertEquals(Tones.SQUARE, r.state.board.tone(cellIndex(1, 1)))
+        assertEquals(0, r.state.board.tone(cellIndex(2, 2)))
+    }
+
+    @Test
+    fun countersTrackClearsAndStreaks() {
+        val nearlyFullRow = board(
+            "########.", ".........", ".........", ".........", ".........", ".........", ".........", ".........", "########.",
+        )
+        var s = state(nearlyFullRow, listOf(dot, dot, bar3h))
+        s = Game.place(s, 0, 0, 8)!!.state
+        assertEquals(1, s.groupsCleared)
+        assertEquals(1, s.longestStreak)
+        assertEquals(1, s.biggestClear)
+        s = Game.place(s, 1, 8, 8)!!.state
+        assertEquals(2, s.groupsCleared)
+        assertEquals(2, s.longestStreak)
+        s = Game.place(s, 2, 4, 0)!!.state
+        assertEquals(0, s.streak)
+        assertEquals(2, s.longestStreak)
+    }
+
+    @Test
+    fun outcomeMatchesPlace() {
+        val s = state(empty, listOf(bar3h, dot, dot), streak = 1)
+        val o = Game.outcome(s, bar3h, 2, 3)!!
+        val r = Game.place(s, 0, 2, 3)!!
+        assertEquals(r.points, o.points)
+        assertEquals(r.cleared, o.cleared)
+        assertNull(Game.outcome(s, bar3h, 8, 7))
+    }
+
+    @Test
+    fun everyPieceHasATone() {
+        assertTrue(Pieces.all.all { it.tone in 1..Tones.COUNT })
+    }
 }
