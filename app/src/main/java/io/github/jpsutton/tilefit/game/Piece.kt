@@ -8,11 +8,25 @@ data class Cell(val row: Int, val col: Int)
 /**
  * A piece in one fixed orientation (pieces are not rotated while playing). Each orientation is its own
  * piece. [id] is stable and is what a saved game stores. Cells need not touch each other.
+ *
+ * [tone] is the piece's shape family, 1 to [Tones.COUNT]. The board keeps it for every block, so a theme
+ * can color blocks by the piece that placed them. It has no effect on the rules.
  */
-class Piece(val id: String, val cells: List<Cell>) {
+class Piece(val id: String, val cells: List<Cell>, val tone: Int = Tones.BAR) {
     val height: Int = cells.maxOf { it.row } + 1
     val width: Int = cells.maxOf { it.col } + 1
     val size: Int get() = cells.size
+}
+
+/** Shape families, stored per block on the [Board]. 0 is an empty cell. */
+object Tones {
+    const val BAR = 1
+    const val CORNER = 2
+    const val SQUARE = 3
+    const val TEE = 4
+    const val ZIGZAG = 5
+    const val ELL = 6
+    const val COUNT = 6
 }
 
 object Pieces {
@@ -54,11 +68,21 @@ object Pieces {
         e(67, "##/.#/.#", 102, 93, 85), e(68, "#./#./##", 102, 93, 85),
     )
 
+    /** The shape family of a table entry, by its id. */
+    private fun toneOf(id: Int): Int = when (id) {
+        in 6..15 -> Tones.BAR
+        in 1..4, in 41..44 -> Tones.CORNER
+        5 -> Tones.SQUARE
+        20, 25, 30, 35, 40, in 59..62 -> Tones.TEE
+        in 26..29, 36, 37, 51, 52 -> Tones.ZIGZAG
+        else -> Tones.ELL
+    }
+
     private fun pieceOf(entry: Entry): Piece {
         val cells = buildList {
             entry.rows.split('/').forEachIndexed { r, row -> row.forEachIndexed { c, ch -> if (ch == '#') add(Cell(r, c)) } }
         }
-        return Piece("f${entry.id}", cells)
+        return Piece("f${entry.id}", cells, toneOf(entry.id))
     }
 
     private val pieces: List<Pair<Piece, IntArray>> = table.map { pieceOf(it) to it.weights }

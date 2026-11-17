@@ -55,7 +55,7 @@ object Game {
 
     /** The cells that clear if [piece] is placed at [row], [col], for the drag preview. Assumes it fits. */
     fun clearing(board: Board, piece: Piece, row: Int, col: Int): Set<Int> =
-        fullGroups(board.with(occupied(piece, row, col), true)).first
+        fullGroups(board.with(occupied(piece, row, col), piece.tone)).first
 
     /**
      * Points for clearing [groups] rows, columns and boxes with one piece: 9 per group, times a multiplier
@@ -67,6 +67,24 @@ object Game {
         return ZONE_POINTS * groups * multiplier
     }
 
+    /** What placing [piece] at [row], [col] would do, without doing it: the cells it clears and its points. */
+    class Outcome(val cleared: Set<Int>, val groups: Int, val points: Int, val streak: Int)
+
+    /**
+     * Score [piece] placed with its top-left corner at [row], [col] of [state]'s board, or null if it does
+     * not fit there. Used for the move itself and for the points shown while dragging.
+     */
+    fun outcome(state: GameState, piece: Piece, row: Int, col: Int): Outcome? {
+        if (!fits(state.board, piece, row, col)) return null
+        val cells = occupied(piece, row, col)
+        val (cleared, groups) = fullGroups(state.board.with(cells, piece.tone))
+        val streak = if (groups > 0) state.streak + 1 else 0
+        // A square of the piece that is cleared right away does not score as a square.
+        val surviving = cells.count { it !in cleared }
+        val points = surviving + clearPoints(groups) + if (streak > 1) STREAK_BONUS else 0
+        return Outcome(cleared, groups, points, streak)
+    }
+
     /**
      * Place the piece in hand [slot] with its top-left corner at [row], [col]: score it, clear any full
      * rows, columns and boxes, and deal a new hand once all three pieces are used. A piece that clears
@@ -75,17 +93,17 @@ object Game {
      */
     fun place(state: GameState, slot: Int, row: Int, col: Int, random: Random = Random): MoveResult? {
         val piece = state.hand.getOrNull(slot) ?: return null
-        if (!fits(state.board, piece, row, col)) return null
-        val placed = state.board.with(occupied(piece, row, col), true)
-        val (cleared, groups) = fullGroups(placed)
-        val streak = if (groups > 0) state.streak + 1 else 0
-        // A square of the piece that is cleared right away does not score as a square.
-        val surviving = occupied(piece, row, col).count { it !in cleared }
-        val points = surviving + clearPoints(groups) + if (streak > 1) STREAK_BONUS else 0
-        val score = state.score + points
+        val o = outcome(state, piece, row, col) ?: return null
+        val score = state.score + o.points
         var hand = state.hand.toMutableList().also { it[slot] = null }
         if (hand.all { it == null }) hand = deal(random, score).toMutableList()
-        val next = GameState(placed.with(cleared, false), hand, score, streak, state.moves + 1)
-        return MoveResult(next, cleared, groups, points)
+        val board = state.board.with(occupied(piece, row, col), piece.tone).with(o.cleared, 0)
+        val next = GameState(
+            board, hand, score, o.streak, state.moves + 1,
+            groupsCleared = state.groupsCleared + o.groups,
+            longestStreak = maxOf(state.longestStreak, o.streak),
+            biggestClear = maxOf(state.biggestClear, o.groups),
+        )
+        return MoveResult(next, o.cleared, o.groups, o.points)
     }
 }
