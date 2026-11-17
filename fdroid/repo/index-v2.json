@@ -1,0 +1,150 @@
+{
+  "repo": {
+    "name": {
+      "en-US": "Tilefit"
+    },
+    "description": {
+      "en-US": "Tilefit, a single-player block puzzle for Android. Built and signed by the release workflow of https://github.com/jpsutton/tilefit."
+    },
+    "icon": {
+      "en-US": {
+        "name": "/icons/icon.png",
+        "sha256": "79363b433f5ca5956e12c014da3cd321bb802a1327eda4a78ddb8785f0d65ca6",
+        "size": 869
+      }
+    },
+    "address": "https://jpsutton.github.io/tilefit/fdroid/repo",
+    "timestamp": 1794950308000,
+    "categories": {
+      "Games": {
+        "name": {
+          "en-US": "Games"
+        }
+      }
+    }
+  },
+  "packages": {
+    "io.github.jpsutton.tilefit": {
+      "metadata": {
+        "added": 1794768356000,
+        "categories": [
+          "Games"
+        ],
+        "changelog": "https://github.com/jpsutton/tilefit/releases",
+        "issueTracker": "https://github.com/jpsutton/tilefit/issues",
+        "lastUpdated": 1794950304000,
+        "license": "MIT",
+        "sourceCode": "https://github.com/jpsutton/tilefit",
+        "webSite": "https://github.com/jpsutton/tilefit",
+        "name": {
+          "en-US": "Tilefit"
+        },
+        "summary": {
+          "en-US": "Single-player block-fitting puzzle on a 9x9 board"
+        },
+        "description": {
+          "en-US": "Tilefit is a single-player block puzzle. Each turn you get three pieces. Drag them onto a 9x9 board and\nfill a whole row, a whole column or one of the nine 3x3 boxes to clear it. Clear several at once and keep\na streak going for bigger scores.\n\nThe game ends when none of your pieces fit. Your unfinished game is saved, so you can pick it up later,\nand the app keeps your best score. There are no ads, accounts or network access.\n\nTilefit is an independent game and is not affiliated with or endorsed by any publisher."
+        },
+        "preferredSigner": "fc90c4009c203bc9b5404f991c77740984ce2781b0d271baba77554b0d9996de"
+      },
+      "versions": {
+        "59d8f5bb3bebbd95afdd328922a02c83b64d8be192ca79c4083ca6df8a260d5b": {
+          "added": 1794950304000,
+          "file": {
+            "name": "/tilefit-0.3.0.apk",
+            "sha256": "59d8f5bb3bebbd95afdd328922a02c83b64d8be192ca79c4083ca6df8a260d5b",
+            "size": 1282738
+          },
+          "manifest": {
+            "nativecode": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86",
+              "x86_64"
+            ],
+            "versionName": "0.3.0",
+            "versionCode": 300,
+            "usesSdk": {
+              "minSdkVersion": 26,
+              "targetSdkVersion": 37
+            },
+            "signer": {
+              "sha256": [
+                "fc90c4009c203bc9b5404f991c77740984ce2781b0d271baba77554b0d9996de"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          }
+        },
+        "e6b97bf7164bdf3d391bb487e097b16e8ff752bf7435e06439c9a2218a361f16": {
+          "added": 1794775815000,
+          "file": {
+            "name": "/tilefit-0.2.0.apk",
+            "sha256": "e6b97bf7164bdf3d391bb487e097b16e8ff752bf7435e06439c9a2218a361f16",
+            "size": 949794
+          },
+          "manifest": {
+            "nativecode": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86",
+              "x86_64"
+            ],
+            "versionName": "0.2.0",
+            "versionCode": 200,
+            "usesSdk": {
+              "minSdkVersion": 26,
+              "targetSdkVersion": 37
+            },
+            "signer": {
+              "sha256": [
+                "fc90c4009c203bc9b5404f991c77740984ce2781b0d271baba77554b0d9996de"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          }
+        },
+        "cf40a694957240812c2beb675d4b0a16e42fe5845550f046eade125e7c15a200": {
+          "added": 1794769763000,
+          "file": {
+            "name": "/tilefit-0.1.1.apk",
+            "sha256": "cf40a694957240812c2beb675d4b0a16e42fe5845550f046eade125e7c15a200",
+            "size": 949794
+          },
+          "manifest": {
+            "nativecode": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86",
+              "x86_64"
+            ],
+            "versionName": "0.1.1",
+            "versionCode": 101,
+            "usesSdk": {
+              "minSdkVersion": 26,
+              "targetSdkVersion": 37
+            },
+            "signer": {
+              "sha256": [
+                "fc90c4009c203bc9b5404f991c77740984ce2781b0d271baba77554b0d9996de"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fdroid>
+	<repo icon="icon.png" name="Tilefit" pubkey="308204fd308202e5a00302010202084a48308e1840224a300d06092a864886f70d01010c0500302c3111300f060355040a13086a70737574746f6e311730150603550403130e54696c65666974204644524f49443020170d3236313131353138343035305a180f32313236313032323138343035305a302c3111300f060355040a13086a70737574746f6e311730150603550403130e54696c65666974204644524f494430820222300d06092a864886f70d01010105000382020f003082020a0282020100acf5a791d6ddd90df39f09154ce3cdd13c2c1ddeef59cad64018de41ddee591081ff178340dbca38c6634069fea923ab6ca44e53955b3c856321292165d0764aee8094bb76d9411dba3464c11fa57ee42a7f165dbff724453fc3416b29efbb3d2d7e88a672f148806773035441b4585f1b10cfabd065dcd10ad6be45c24427aa2ecd4abebd5d56c9d1d9a9ee87f411ae0dd5301170c979091c66889071d808fd16af49b859ee5296cfe0147df1be739bab745a34814db6c03d43584867735455caec4c1a3a5325aa41794b594704c0e6655c1404647dae4533c4995ba6c68193ef918a9ca7e38c2dd574da5c64f462dc5a76dbbea22e05ff9f225c233a211f1018886b55ebbb6de4052915288b9bffde01766cc548ee7c31c27f6074fd541725dcd61eed406627c6ea0453452cf131649320b8b6ef0d3ed5ea4cf93b57ef22a36a2615ffac07e72d61e5917e566a848b7c9f9744a1c5261a7096f34b3d63c67b495d10e5c844010361d4f2f73d839377c9f722ae81865c2691baa0c6fa5089ce4b75e7d33f58a3e1fb15a0b518e49e7521c236a2eb234e1a02b0af208c583d9ffb61d5b5782a95399d8283d829bf282d7db1f9669fb2355d734dbb3e4d7964e87e3e169f9fe730799113266c83ae400297cec5df1951209cb76a819e68ee4b0cee0cda31e386c4cdf017159b68c4bb1da8b9f8fcf709d8e4c528a57dbfb8678f0203010001a321301f301d0603551d0e0416041406a62bfb2da9a1709fb53efb75f6054f61e0495f300d06092a864886f70d01010c050003820201009707a2747a4ebb8c106358c3252022892f2cb6b894138b6f63dd051fe0ba7c0f6ec084e2737d69db1d9c8193f7b751f5f29035043a4ba6d80534e9f80b47f7b21afc19d963b1b37b0fe70ee3de3b69e8fd5d0027f6a205ce5c6fac9ccbce17f7d7fa99eb13c8a9f6d684378311b93f79911ff84f7778451c27296832cd68bfc6b227ed7e068e6f265242046887073a3b8c53d0add47f7864b91700b7b6e8a34151691e7d374e96e9ea81380973674a719f1f3e2ad8e24b0e9839daceb6f437b7dc9c641d067dfea7d106589cea12fbe8a431d5adc159a604b3d2a83373996a0b5fa65aa39fe33b1528be1d7719c06032b29b25d9cb05fb664545f861db2fefa5c6e9fd0b5efebd2331a05c4c4b3d8399e1bc80c98b3b1841a043e8555988ad0eddcacb0c9dacc6887572728929fc9f55122ee02ba91a3ecea6b7ad359b627c7769498861733c6a6c43596ae4eb1fb96c6b5c420b306cda6d14baeed96a4662ad9af8fbc1972761d5b14d86943c400a851acf5ab42d92c7c2b0c9857df4c726d24609e8ae3eeb5e1505b028cf17a02273d5ae7a3dcab8a787fc4f75589a99f9639f37d29c0b1a969fc36febf900a543da8945915e2a88d81c1675a61248e2c4d76d38db712b7525fb662ac4fc430fd676c684d3cdb013805acd01a182114d3f084c9650288e2c36ded923aee6f9777baabcdae82cef049cdd79875ca97e0d01f0" timestamp="1794950308" url="https://jpsutton.github.io/tilefit/fdroid/repo" version="20002">
+		<description>Tilefit, a single-player block puzzle for Android. Built and signed by the release workflow of https://github.com/jpsutton/tilefit.</description>
+	</repo>
+	<application id="io.github.jpsutton.tilefit">
+		<id>io.github.jpsutton.tilefit</id>
+		<added>2026-11-15</added>
+		<lastupdated>2026-11-17</lastupdated>
+		<name>Tilefit</name>
+		<summary>Single-player block-fitting puzzle on a 9x9 board</summary>
+		<desc>Tilefit is a single-player block puzzle. Each turn you get three pieces. Drag them onto a 9x9 board and
+fill a whole row, a whole column or one of the nine 3x3 boxes to clear it. Clear several at once and keep
+a streak going for bigger scores.
+
+The game ends when none of your pieces fit. Your unfinished game is saved, so you can pick it up later,
+and the app keeps your best score. There are no ads, accounts or network access.
+
+Tilefit is an independent game and is not affiliated with or endorsed by any publisher.</desc>
+		<license>MIT</license>
+		<categories>Games</categories>
+		<category>Games</category>
+		<web>https://github.com/jpsutton/tilefit</web>
+		<source>https://github.com/jpsutton/tilefit</source>
+		<tracker>https://github.com/jpsutton/tilefit/issues</tracker>
+		<changelog>https://github.com/jpsutton/tilefit/releases</changelog>
+		<marketversion></marketversion>
+		<marketvercode>300</marketvercode>
+		<package>
+			<version>0.3.0</version>
+			<versioncode>300</versioncode>
+			<apkname>tilefit-0.3.0.apk</apkname>
+			<hash type="sha256">59d8f5bb3bebbd95afdd328922a02c83b64d8be192ca79c4083ca6df8a260d5b</hash>
+			<size>1282738</size>
+			<sdkver>26</sdkver>
+			<targetSdkVersion>37</targetSdkVersion>
+			<added>2026-11-17</added>
+			<sig>c814c947ca587f38544ed523b73f7123</sig>
+			<permissions>io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION</permissions>
+			<nativecode>arm64-v8a,armeabi-v7a,x86,x86_64</nativecode>
+		</package>
+		<package>
+			<version>0.2.0</version>
+			<versioncode>200</versioncode>
+			<apkname>tilefit-0.2.0.apk</apkname>
+			<hash type="sha256">e6b97bf7164bdf3d391bb487e097b16e8ff752bf7435e06439c9a2218a361f16</hash>
+			<size>949794</size>
+			<sdkver>26</sdkver>
+			<targetSdkVersion>37</targetSdkVersion>
+			<added>2026-11-15</added>
+			<sig>c814c947ca587f38544ed523b73f7123</sig>
+			<permissions>io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION</permissions>
+			<nativecode>arm64-v8a,armeabi-v7a,x86,x86_64</nativecode>
+		</package>
+		<package>
+			<version>0.1.1</version>
+			<versioncode>101</versioncode>
+			<apkname>tilefit-0.1.1.apk</apkname>
+			<hash type="sha256">cf40a694957240812c2beb675d4b0a16e42fe5845550f046eade125e7c15a200</hash>
+			<size>949794</size>
+			<sdkver>26</sdkver>
+			<targetSdkVersion>37</targetSdkVersion>
+			<added>2026-11-15</added>
+			<sig>c814c947ca587f38544ed523b73f7123</sig>
+			<permissions>io.github.jpsutton.tilefit.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION</permissions>
+			<nativecode>arm64-v8a,armeabi-v7a,x86,x86_64</nativecode>
+		</package>
+	</application>
+</fdroid>

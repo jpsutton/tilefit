@@ -1,0 +1,20 @@
+Categories:
+  - Games
+License: MIT
+WebSite: https://github.com/jpsutton/tilefit
+SourceCode: https://github.com/jpsutton/tilefit
+IssueTracker: https://github.com/jpsutton/tilefit/issues
+Changelog: https://github.com/jpsutton/tilefit/releases
+
+AutoName: Tilefit
+Name: Tilefit
+Summary: Single-player block-fitting puzzle on a 9x9 board
+Description: |-
+  Tilefit is a single-player block puzzle. Each turn you get three pieces. Drag them onto a 9x9 board and
+  fill a whole row, a whole column or one of the nine 3x3 boxes to clear it. Clear several at once and keep
+  a streak going for bigger scores.
+
+  The game ends when none of your pieces fit. Your unfinished game is saved, so you can pick it up later,
+  and the app keeps your best score. There are no ads, accounts or network access.
+
+  Tilefit is an independent game and is not affiliated with or endorsed by any publisher.
