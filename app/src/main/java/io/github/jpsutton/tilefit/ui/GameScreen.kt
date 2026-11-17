@@ -3,8 +3,8 @@ package io.github.jpsutton.tilefit.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,18 +13,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,11 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -48,14 +48,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.jpsutton.tilefit.game.BOX
-import io.github.jpsutton.tilefit.game.Board
 import io.github.jpsutton.tilefit.game.Game
+import io.github.jpsutton.tilefit.game.GameState
 import io.github.jpsutton.tilefit.game.Piece
+import io.github.jpsutton.tilefit.game.Pieces
 import io.github.jpsutton.tilefit.game.SIZE
 import io.github.jpsutton.tilefit.game.cellIndex
 import kotlin.math.roundToInt
@@ -71,6 +73,7 @@ private class Drag(val slot: Int, val piece: Piece, pointer: Offset) {
 @Composable
 fun GameScreen(vm: GameViewModel, onMenu: () -> Unit) {
     val state = vm.game ?: return
+    val s = LocalTilefit.current
     val haptics = LocalHapticFeedback.current
     var drag by remember { mutableStateOf<Drag?>(null) }
     var rootOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -89,27 +92,20 @@ fun GameScreen(vm: GameViewModel, onMenu: () -> Unit) {
         popupKey = e.id
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         fade.snapTo(1f)
-        fade.animateTo(0f, tween(450))
+        fade.animateTo(0f, tween(600))
         if (popupKey == e.id) popup = null
     }
 
-    val primary = MaterialTheme.colorScheme.primary
-    // Neighbouring 3x3 boxes alternate between these two shades; they must be easy to tell apart.
-    val dark = isSystemInDarkTheme()
-    val colors = BoardColors(
-        empty = if (dark) Color(0xFF1B2040) else Color(0xFFDDE2F3),
-        emptyAlt = if (dark) Color(0xFF3A4478) else Color(0xFFA9B5DE),
-        block = primary,
-        clear = MaterialTheme.colorScheme.secondary,
-        flash = MaterialTheme.colorScheme.tertiary,
-    )
-
-    BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().onGloballyPositioned { rootOrigin = it.positionInRoot() }) {
-        // Header and the piece tray take what the board leaves; the tray slots are a third of the board wide.
-        val boardSize: Dp = minOf(maxWidth - 24.dp, (maxHeight - 130.dp) * 3f / 4f).coerceAtLeast(120.dp)
-        val boardPx = with(LocalDensity.current) { boardSize.toPx() }
-        val cellPx = boardPx / SIZE
-        val slotSize = boardSize / Game.HAND
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(s.background).safeDrawingPadding()
+            .onGloballyPositioned { rootOrigin = it.positionInRoot() },
+    ) {
+        // Header, meters and the hand take what the board leaves; the hand is a third of the board tall.
+        val boardSize: Dp = minOf(maxWidth - 32.dp, (maxHeight - 190.dp) * 3f / 4f).coerceAtLeast(120.dp)
+        val boardPad = 5.dp
+        val density = LocalDensity.current
+        val cellPx = with(density) { (boardSize - boardPad * 2).toPx() } / SIZE
+        val cellDp = with(density) { cellPx.toDp() }
 
         // Where the dragged piece would land, or null if it is off the board or does not fit there.
         val d = drag
@@ -119,91 +115,98 @@ fun GameScreen(vm: GameViewModel, onMenu: () -> Unit) {
             val row = ((topLeft.y - boardOrigin.y) / cellPx).roundToInt()
             if (Game.fits(state.board, it.piece, row, col)) row to col else null
         }
-        val preview = if (d != null && target != null) Game.clearing(state.board, d.piece, target.first, target.second) else emptySet()
+        val outcome = if (d != null && target != null) Game.outcome(state, d.piece, target.first, target.second) else null
+        val preview = outcome?.cleared ?: emptySet()
 
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Header(state.score, vm.best, state.streak, onMenu, Modifier.width(boardSize))
-            Box(Modifier.height(28.dp).width(boardSize), contentAlignment = Alignment.Center) {
+        Column(Modifier.fillMaxSize().padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Header(state.score, vm.best, onMenu, Modifier.width(boardSize))
+            Spacer(Modifier.height(14.dp))
+            Row(Modifier.width(boardSize), verticalAlignment = Alignment.CenterVertically) {
+                StreakMeter(state.streak, Modifier.weight(1f))
+                Spacer(Modifier.width(18.dp))
+                TierPips(Pieces.difficultyFor(state.score))
+            }
+            Box(Modifier.height(40.dp).width(boardSize), contentAlignment = Alignment.Center) {
                 popup?.let { e ->
-                    val combo = if (e.groups > 1) "${e.groups} lines! " else ""
-                    val streak = if (e.streak > 1) "streak x${e.streak}  " else ""
-                    Text(
-                        "$streak$combo+${e.points}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.alpha(0.3f + 0.7f * fade.value),
+                    val parts = buildList {
+                        if (e.groups > 1) add("${e.groups} at once")
+                        if (e.streak > 1) add("streak ×${e.streak}")
+                        add("+${e.points}")
+                    }
+                    Chip(parts.joinToString("  ·  "), s.hot, s.onHot, Modifier.alpha(0.35f + 0.65f * fade.value))
+                }
+            }
+            Box(
+                Modifier.size(boardSize).clip(RoundedCornerShape(boardPad * 2.6f)).background(s.grout).padding(boardPad),
+            ) {
+                Canvas(
+                    Modifier.fillMaxSize()
+                        .semantics { contentDescription = "Board, ${state.board.count} of ${SIZE * SIZE} squares filled" }
+                        .onGloballyPositioned { boardOrigin = it.positionInRoot() },
+                ) {
+                    for (r in 0 until SIZE) for (c in 0 until SIZE) {
+                        val i = cellIndex(r, c)
+                        val tl = Offset(c * cellPx, r * cellPx)
+                        when {
+                            // Existing blocks that would clear get the highlight color.
+                            state.board.isFilled(i) && i in preview -> drawBlock(s, s.hot, tl, cellPx)
+                            state.board.isFilled(i) -> drawBlock(s, s.blockColor(state.board.tone(i)), tl, cellPx)
+                            else -> drawEmptyCell(s, r, c, tl, cellPx)
+                        }
+                    }
+                    if (d != null && target != null) {
+                        for (c in d.piece.cells) {
+                            val i = cellIndex(target.first + c.row, target.second + c.col)
+                            drawGhost(s, if (i in preview) s.hot else s.pieceColor(d.piece), Offset((i % SIZE) * cellPx, (i / SIZE) * cellPx), cellPx)
+                        }
+                    }
+                    if (fade.value > 0f) {
+                        for (i in fadeCells) drawBlock(s, s.hot, Offset((i % SIZE) * cellPx, (i / SIZE) * cellPx), cellPx, alpha = fade.value)
+                    }
+                }
+                // What the move would score, next to where the piece would land.
+                if (d != null && target != null && outcome != null) {
+                    val x = ((target.second + d.piece.width) * cellPx).coerceAtMost(SIZE * cellPx - cellPx * 1.8f)
+                    val y = (target.first * cellPx - cellPx * 0.7f).coerceAtLeast(0f)
+                    val clears = outcome.groups > 0
+                    Chip(
+                        "+${outcome.points}",
+                        if (clears) s.hot else s.panel,
+                        if (clears) s.onHot else s.ink,
+                        Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
                     )
                 }
             }
-            Canvas(
-                Modifier.size(boardSize)
-                    .semantics { contentDescription = "Board, ${state.board.count} of ${SIZE * SIZE} squares filled" }
-                    .onGloballyPositioned { boardOrigin = it.positionInRoot() },
-            ) {
-                drawBoard(state.board, colors, cellPx)
-                // Existing blocks that would clear get highlighted; the ghost of the piece goes on top.
-                for (i in preview) {
-                    if (state.board.isFilled(i)) drawCell(i, colors.clear, cellPx)
-                }
-                if (d != null && target != null) {
-                    for (c in d.piece.cells) {
-                        val i = cellIndex(target.first + c.row, target.second + c.col)
-                        drawCell(i, if (i in preview) colors.clear else colors.block, cellPx, alpha = 0.55f)
-                    }
-                }
-                if (fade.value > 0f) {
-                    for (i in fadeCells) drawCell(i, colors.flash, cellPx, alpha = fade.value)
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.width(boardSize)) {
-                for (slot in 0 until Game.HAND) {
-                    val piece = state.hand[slot]
-                    val playable = piece != null && Game.fitsAnywhere(state.board, piece)
-                    Box(
-                        Modifier.size(slotSize)
-                            .onGloballyPositioned { slotOrigins[slot] = it.positionInRoot() }
-                            .pointerInput(piece, state.isOver, cellPx) {
-                                if (piece == null || state.isOver) return@pointerInput
-                                detectDragGestures(
-                                    onDragStart = { local -> drag = Drag(slot, piece, slotOrigins[slot] + local) },
-                                    onDrag = { change, amount ->
-                                        change.consume()
-                                        drag?.let { it.pointer += amount }
-                                    },
-                                    onDragEnd = {
-                                        val cur = drag
-                                        drag = null
-                                        if (cur != null) {
-                                            val tl = cur.pointer - Offset(
-                                                cur.piece.width * cellPx / 2,
-                                                cur.piece.height * cellPx / 2 + LIFT_CELLS * cellPx,
-                                            )
-                                            val col = ((tl.x - boardOrigin.x) / cellPx).roundToInt()
-                                            val row = ((tl.y - boardOrigin.y) / cellPx).roundToInt()
-                                            if (vm.place(cur.slot, row, col) != null) {
-                                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            }
-                                        }
-                                    },
-                                    onDragCancel = { drag = null },
-                                )
+            Spacer(Modifier.weight(1f))
+            Hand(state, drag?.slot, boardSize, cellDp) { slot, piece ->
+                Modifier
+                    .onGloballyPositioned { slotOrigins[slot] = it.positionInRoot() }
+                    .pointerInput(piece, state.isOver, cellPx) {
+                        if (piece == null || state.isOver) return@pointerInput
+                        detectDragGestures(
+                            onDragStart = { local -> drag = Drag(slot, piece, slotOrigins[slot] + local) },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                drag?.let { it.pointer += amount }
                             },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (piece != null) {
-                            val trayCell = slotSize / 5.5f
-                            val hidden = drag?.slot == slot
-                            Canvas(
-                                Modifier.size(trayCell * piece.width, trayCell * piece.height)
-                                    .alpha(if (hidden) 0.15f else if (playable) 1f else 0.35f)
-                                    .semantics { contentDescription = "Piece of ${piece.size} squares" },
-                            ) {
-                                drawPiece(piece, colors.block, with(this) { trayCell.toPx() })
-                            }
-                        }
+                            onDragEnd = {
+                                val cur = drag
+                                drag = null
+                                if (cur != null) {
+                                    val tl = cur.pointer - Offset(
+                                        cur.piece.width * cellPx / 2,
+                                        cur.piece.height * cellPx / 2 + LIFT_CELLS * cellPx,
+                                    )
+                                    val col = ((tl.x - boardOrigin.x) / cellPx).roundToInt()
+                                    val row = ((tl.y - boardOrigin.y) / cellPx).roundToInt()
+                                    if (vm.place(cur.slot, row, col) != null) {
+                                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                }
+                            },
+                            onDragCancel = { drag = null },
+                        )
                     }
-                }
             }
         }
 
@@ -212,86 +215,135 @@ fun GameScreen(vm: GameViewModel, onMenu: () -> Unit) {
             Canvas(Modifier.fillMaxSize()) {
                 val tl = d.pointer - rootOrigin -
                     Offset(d.piece.width * cellPx / 2, d.piece.height * cellPx / 2 + LIFT_CELLS * cellPx)
-                translateTo(tl) { drawPiece(d.piece, colors.block, cellPx, alpha = if (target != null) 0.95f else 0.7f) }
+                translate(tl.x, tl.y) { drawPiece(s, d.piece, cellPx * 1.04f, alpha = if (target != null) 1f else 0.75f) }
             }
         }
 
         if (state.isOver) {
-            GameOver(state.score, vm.best, vm.newBest, onAgain = vm::start, onMenu = onMenu)
+            GameOver(state, vm.best, vm.newBest, onAgain = vm::start, onMenu = onMenu)
         }
     }
 }
 
-private class BoardColors(val empty: Color, val emptyAlt: Color, val block: Color, val clear: Color, val flash: Color)
-
 @Composable
-private fun Header(score: Int, best: Int, streak: Int, onMenu: () -> Unit, modifier: Modifier) {
-    Row(modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "Score $score" }) {
-            Text("SCORE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                "$score",
-                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 34.sp, fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "Best $best" }) {
-            Text("BEST", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${maxOf(best, score)}", style = MaterialTheme.typography.titleLarge)
-        }
-        TextButton(onClick = onMenu, Modifier.heightIn(min = 48.dp)) { Text("Menu") }
+private fun Header(score: Int, best: Int, onMenu: () -> Unit, modifier: Modifier) {
+    val s = LocalTilefit.current
+    Row(modifier.padding(top = 8.dp), verticalAlignment = Alignment.Top) {
+        Stat("Score", score.grouped(), Modifier.weight(1f), size = 52.sp)
+        Stat("Best", maxOf(best, score).grouped(), Modifier.padding(end = 12.dp, top = 2.dp), size = 20.sp, color = s.accent, alignEnd = true)
+        IconButtonBox(Icon.MENU, "Menu", onMenu)
     }
 }
 
+/** The three slots of the hand. [slotModifier] wires the drag gesture to each slot. */
 @Composable
-private fun GameOver(score: Int, best: Int, newBest: Boolean, onAgain: () -> Unit, onMenu: () -> Unit) {
-    Box(Modifier.fillMaxSize().pointerInput(Unit) { detectDragGestures { c, _ -> c.consume() } }, contentAlignment = Alignment.Center) {
-        Card(Modifier.padding(32.dp).fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Game over", style = MaterialTheme.typography.headlineSmall)
-                Text("$score", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)
-                Text(if (newBest) "New best score!" else "Best: $best", style = MaterialTheme.typography.bodyLarge)
-                Button(onClick = onAgain, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Play again") }
-                OutlinedButton(onClick = onMenu, Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Menu") }
+private fun Hand(
+    state: GameState,
+    held: Int?,
+    boardSize: Dp,
+    boardCell: Dp,
+    slotModifier: (Int, Piece?) -> Modifier,
+) {
+    val s = LocalTilefit.current
+    val height = boardSize / Game.HAND
+    val trayPad = if (s.tray != null) 10.dp else 0.dp
+    Row(
+        Modifier.width(boardSize).height(height).clip(RoundedCornerShape(s.corner + 4.dp))
+            .then(if (s.tray != null) Modifier.background(s.tray) else Modifier)
+            .padding(trayPad),
+        horizontalArrangement = Arrangement.spacedBy(if (s.slot != null) 10.dp else 0.dp),
+    ) {
+        for (slot in 0 until Game.HAND) {
+            val piece = state.hand[slot]
+            val playable = piece != null && Game.fitsAnywhere(state.board, piece)
+            val holding = held == slot
+            val shape = RoundedCornerShape(s.corner)
+            Box(
+                Modifier.weight(1f).fillMaxSize()
+                    .then(
+                        when {
+                            holding -> Modifier.drawBehind {
+                                val w = 1.5.dp.toPx()
+                                drawRoundRect(
+                                    s.muted.copy(alpha = 0.6f), cornerRadius = CornerRadius(s.corner.toPx()),
+                                    style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx()))),
+                                )
+                            }
+                            s.slot != null -> Modifier.clip(shape).background(s.slot)
+                            else -> Modifier
+                        },
+                    )
+                    .then(slotModifier(slot, piece)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (piece != null && !holding) {
+                    // Tray pieces are smaller than on the board: at most half a board cell per square.
+                    val cell = minOf(boardCell * 0.55f, (height - trayPad * 2) / 5.5f)
+                    PieceView(
+                        piece, cell,
+                        Modifier.semantics { contentDescription = if (playable) "Piece of ${piece.size} squares" else "Piece of ${piece.size} squares, does not fit" },
+                        alpha = if (playable) 1f else 0.3f,
+                    )
+                }
             }
         }
     }
 }
 
-private fun DrawScope.drawBoard(board: Board, c: BoardColors, cell: Float) {
-    for (r in 0 until SIZE) for (col in 0 until SIZE) {
-        val alt = ((r / BOX) + (col / BOX)) % 2 == 1
-        val i = cellIndex(r, col)
-        drawCell(i, if (board.isFilled(i)) c.block else if (alt) c.emptyAlt else c.empty, cell)
+@Composable
+private fun GameOver(state: GameState, best: Int, newBest: Boolean, onAgain: () -> Unit, onMenu: () -> Unit) {
+    val s = LocalTilefit.current
+    Box(
+        Modifier.fillMaxSize().background(s.background.copy(alpha = 0.97f))
+            .pointerInput(Unit) { detectDragGestures { c, _ -> c.consume() } },
+    ) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Label("No room left", color = s.hot)
+                Number(state.score.grouped(), 84.sp, color = s.accent)
+                if (newBest) {
+                    Chip("NEW BEST", s.accent, s.onAccent)
+                } else {
+                    Text("Best ${best.grouped()}", style = TextStyle(fontFamily = s.body, fontSize = 16.sp), color = s.muted)
+                }
+            }
+            Column {
+                StatLine("Pieces placed", state.moves.grouped())
+                StatLine("Groups cleared", state.groupsCleared.grouped())
+                StatLine("Longest streak", "${state.longestStreak}")
+                StatLine("Biggest clear", if (state.biggestClear > 0) "${state.biggestClear} at once" else "none")
+                StatLine("Tier reached", "${Pieces.difficultyFor(state.score) + 1} / 3")
+            }
+            val stuck = state.hand.filterNotNull()
+            if (stuck.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Label("These did not fit")
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                        for (p in stuck) PieceView(p, 16.dp)
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            PrimaryButton("Play again", onAgain)
+            RowButton("Menu", onMenu, icon = null)
+        }
     }
 }
 
-private fun DrawScope.drawCell(index: Int, color: Color, cell: Float, alpha: Float = 1f) {
-    val gap = cell * 0.06f
-    drawRoundRect(
-        color,
-        topLeft = Offset((index % SIZE) * cell + gap, (index / SIZE) * cell + gap),
-        size = Size(cell - 2 * gap, cell - 2 * gap),
-        cornerRadius = CornerRadius(cell * 0.18f),
-        alpha = alpha,
-    )
-}
-
-private fun DrawScope.drawPiece(piece: Piece, color: Color, cell: Float, alpha: Float = 1f) {
-    val gap = cell * 0.06f
-    for (c in piece.cells) {
-        drawRoundRect(
-            color,
-            topLeft = Offset(c.col * cell + gap, c.row * cell + gap),
-            size = Size(cell - 2 * gap, cell - 2 * gap),
-            cornerRadius = CornerRadius(cell * 0.18f),
-            alpha = alpha,
-        )
+@Composable
+private fun StatLine(label: String, value: String) {
+    val s = LocalTilefit.current
+    Row(
+        Modifier.fillMaxWidth()
+            .drawBehind { drawLine(s.outline, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
+            .padding(vertical = 13.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Label(label, Modifier.weight(1f))
+        Text(value, style = TextStyle(fontFamily = s.numbers, fontWeight = FontWeight.Bold, fontSize = 18.sp), color = s.ink)
     }
-}
-
-private fun DrawScope.translateTo(offset: Offset, block: DrawScope.() -> Unit) {
-    drawContext.transform.translate(offset.x, offset.y)
-    block()
-    drawContext.transform.translate(-offset.x, -offset.y)
 }

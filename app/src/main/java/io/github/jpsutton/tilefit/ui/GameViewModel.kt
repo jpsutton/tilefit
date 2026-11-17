@@ -28,6 +28,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     var best: Int by mutableIntStateOf(store.best())
         private set
 
+    var gamesPlayed: Int by mutableIntStateOf(store.gamesPlayed())
+        private set
+
+    var longestStreak: Int by mutableIntStateOf(store.longestStreak())
+        private set
+
+    var themeChoice: ThemeChoice by mutableStateOf(ThemeChoice.of(store.theme()))
+        private set
+
+    fun chooseTheme(choice: ThemeChoice) {
+        themeChoice = choice
+        store.setTheme(choice.key)
+    }
+
     /** Set when the finished game beat the stored best. */
     var newBest: Boolean by mutableStateOf(false)
         private set
@@ -67,8 +81,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             null
         }
         if (next.isOver) {
-            newBest = store.submit(next.score)
+            newBest = store.finish(next)
             best = store.best()
+            gamesPlayed = store.gamesPlayed()
+            longestStreak = store.longestStreak()
             store.saveGame(null)
             saved = null
         } else {
